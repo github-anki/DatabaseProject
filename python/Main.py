@@ -1,22 +1,13 @@
 from datetime import date
 from sqlalchemy import create_engine
 from sqlalchemy import Table, Column, Integer, String, MetaData, Date
+from faker import Faker
+from random import randrange
 
 meta = MetaData()
 
 engine = create_engine('postgres://docker:docker@localhost/docker', echo=True)
-
 meta.create_all(engine)
-
-# CREATE TABLE "university" (
-#     "university_id" serial NOT NULL,
-#     "uni_name" VARCHAR(50) NOT NULL,
-#     "postal_code" VARCHAR(10) NOT NULL,
-#     "town" VARCHAR(100) NOT NULL,
-#     "address" VARCHAR(100) NOT NULL,
-#     "country" VARCHAR(50) NOT NULL,
-#     CONSTRAINT "university_pk" PRIMARY KEY ("university_id")
-# );
 
 university = Table(
     'university', meta,
@@ -39,22 +30,38 @@ user = Table(
 )
 
 conn = engine.connect()
+fake = Faker()
+
+
+def generate_universities():
+    for uni in range(40):
+        insert_university = university.insert().values(uni_name=fake.company(),
+                                                       postal_code=fake.postalcode(),
+                                                       town=fake.city(),
+                                                       address=fake.address(),
+                                                       country=fake.country())
+        conn.execute(insert_university)
+
 
 # Create university
-insert_university = university.insert().values(uni_name='PWr', postal_code='50-353', town='Wrocław', address='Address', country='Poland')
+generate_universities()
 
-# Insert university
-conn.execute(insert_university)
 
-# Select query
-query = 'SELECT university_id from university'
+def generate_users():
+    # Select query
+    query = 'SELECT university_id from university'
 
-# Select all universities
-university_ids = conn.execute(query).fetchall()
+    # Select all universities
+    university_ids = conn.execute(query).fetchall()
 
-for row in university_ids:
-    print(row[0])
+    for i in range(2000):
+        insert_user = user.insert().values(university_id=university_ids[randrange(len(university_ids))][0],
+                                           name=fake.first_name(),
+                                           surname=fake.last_name(),
+                                           email=fake.first_name() + fake.last_name() + '@' + fake.domain_name(),
+                                           registration_date=date.today())
+        conn.execute(insert_user)
 
-insert_user = user.insert().values(university_id=university_ids[0][0], name='Ravi', surname='Surname', email='a@a.com', registration_date=date.today())
 
-conn.execute(insert_user)
+generate_users()
+
