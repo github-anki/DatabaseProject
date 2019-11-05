@@ -1,8 +1,9 @@
 from datetime import date
 from sqlalchemy import create_engine
-from sqlalchemy import Table, Column, Integer, String, MetaData, Date
+from sqlalchemy import Table, Column, Integer, String, MetaData, Date, Time, Float
 from faker import Faker
-from random import randrange
+from random import randrange, randint
+
 
 meta = MetaData()
 
@@ -28,7 +29,6 @@ user = Table(
     Column('surname', String),
     Column('registration_date', Date)
 )
-
 
 event = Table(
     'event', meta,
@@ -77,8 +77,78 @@ paper = Table(
     Column('abstrakt', String)
 )
 
+domain = Table(
+    'domain', meta,
+    Column('domain_id', Integer, primary_key=True),
+    Column('domain_name', String)
+)
+
+participant = Table(
+    'participant', meta,
+    Column('welcomepack_id', Integer),
+    Column('ticket_id', Integer),
+    Column('user_id', Integer, primary_key=True)
+)
+
+welcomepack = Table(
+    'welcomepack', meta,
+    Column('welcomepack_id', Integer, primary_key=True),
+    Column('shirt_size', String)
+)
+
+ticket = Table(
+    'ticket', meta,
+    Column('ticket_id', Integer, primary_key=True),
+    Column('cost', Float),
+    Column('purchase_date', Date)
+)
+
+grade = Table(
+    'grade', meta,
+    Column('paper_id', Integer, primary_key=True),
+    Column('user_id', Integer, primary_key=True),
+    Column('grade', Float),
+    Column('reason', String)
+)
+
+reviewer = Table(
+    'reviewer', meta,
+    Column('user_id', Integer, primary_key=True),
+    Column('academic_title', String)
+)
+
+administrator = Table(
+    'administrator', meta,
+    Column('user_id', Integer, primary_key=True),
+    Column('duty', String)
+)
+
+supervision = Table(
+    'supervision', meta,
+    Column('user_id', Integer, primary_key=True),
+    Column('timetable_id', Integer, primary_key=True)
+)
+
+domain_reviewer = Table(
+    'domain_reviewer', meta,
+    Column('user_id', Integer, primary_key=True),
+    Column('domain_id', Integer, primary_key=True)
+)
+
+participation = Table(
+    'participation', meta,
+    Column('user_id', Integer, primary_key=True),
+    Column('lecture_id', Integer, primary_key=True)
+)
+
 conn = engine.connect()
 fake = Faker()
+
+
+def generate_domains():
+    for dom in range(20):
+        insert_domain = domain.insert().values(domain_name=fake.job())
+        conn.execute(insert_domain)
 
 
 def generate_universities():
@@ -91,10 +161,6 @@ def generate_universities():
         conn.execute(insert_university)
 
 
-# Create university
-generate_universities()
-
-
 def generate_users():
     # Select query
     query = 'SELECT university_id from university'
@@ -103,7 +169,7 @@ def generate_users():
     university_ids = conn.execute(query).fetchall()
 
     for i in range(2000):
-        insert_user = user.insert().values(university_id=university_ids[randrange(len(university_ids))][0],
+        insert_user = user.insert().values(university_id=university_ids[random_from_range(university_ids)][0],
                                            name=fake.first_name(),
                                            surname=fake.last_name(),
                                            email=fake.first_name() + fake.last_name() + '@' + fake.domain_name(),
@@ -111,5 +177,113 @@ def generate_users():
         conn.execute(insert_user)
 
 
-generate_users()
+def generate_events():
+    pass
 
+
+def generate_tickets():
+    pass
+
+
+def generate_welcomepacks():
+    pass
+
+
+def generate_classrooms():
+    for clas in range(30):
+        insert_class = classroom.insert().values(classroom_number = randint(1,700),
+                                                       postal_code=fake.postalcode(),
+                                                       town=fake.city(),
+                                                       address=fake.address())
+        conn.execute(insert_class)
+    
+
+
+def generate_timetables():
+    # Select query
+    query = 'SELECT event_id from event'
+
+    # Select all universities
+    event_ids = conn.execute(query).fetchall()
+    for tt in range(6):
+        insert_timetable = timetable.insert().values(event_id = event_ids[random_from_range(event_ids)][0],
+                                                       timetable_name=fake.postalcode(),
+                                                       date = fake.date_between(start_date = "today", end_date = None ) )
+        conn.execute(insert_timetable)
+
+
+def generate_papers():
+    pass
+
+
+def generate_administrators():
+    pass
+
+
+def generate_reviewers():
+    # Select query
+    query = 'SELECT user_id from reviewers'
+
+    # Select all universities
+    user_ids = conn.execute(query).fetchall()
+    for r in range(50):
+        insert_reviewers = timetable.insert().values(user_id = user_ids[random_from_range(user_ids)][0],
+                                                       academic_title=fake.job)
+        conn.execute(insert_reviewers)
+    
+
+
+def generate_participants():
+    pass
+
+
+def generate_suprevisions():
+    pass
+
+
+def generate_grades():
+    pass
+
+
+def generate_domain_reviewers():
+    pass
+
+
+def generate_lectures():
+    pass
+
+
+def generate_participations():
+    pass
+
+
+def random_from_range(collection):
+    return randrange(len(collection))
+
+
+# No foreign keys needed #
+generate_universities()
+generate_events()
+generate_tickets()
+generate_welcomepacks()
+generate_classrooms()
+generate_domains()
+
+# User and timetable #
+generate_users()
+generate_timetables()
+
+# Paper, administrator, reviewer, participant #
+generate_reviewers()
+generate_papers()
+generate_administrators()
+generate_participants()
+
+# supervision, grade, domain_reviewer, lecture #
+generate_suprevisions()
+generate_grades()
+generate_domain_reviewers()
+generate_lectures()
+
+# participation #
+generate_participations()
